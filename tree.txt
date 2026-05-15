@@ -1,0 +1,78 @@
+├── check_db.py
+├── check_logs.py
+├── sms_auto.db
+├── sms_auto.db-shm
+├── sms_auto.db-wal
+├── tree.txt
+├── backend/
+│   ├── .env
+│   ├── .env.example
+│   ├── .env.production.example
+│   ├── .gitignore
+│   ├── add_sim_farm.py
+│   ├── check_db.py
+│   ├── check_failed.py
+│   ├── main.py
+│   ├── refactor_gateway.py
+│   ├── requirements.txt
+│   ├── sms_auto.db
+│   ├── sms_auto.db-shm
+│   ├── sms_auto.db-wal
+│   ├── test_sms_direct.py
+│   ├── models/
+│   │   ├── database.py
+│   │   ├── schemas.py
+│   ├── routers/
+│   │   ├── admin.py
+│   │   ├── auth.py
+│   │   ├── sms.py
+│   │   ├── gateway/
+│   │   │   ├── devices.py
+│   │   │   ├── logs.py
+│   │   │   ├── settings.py
+│   │   │   ├── sms.py
+│   │   │   ├── utils.py
+│   │   │   ├── __init__.py
+│   ├── services/
+│   │   ├── audit_service.py
+│   │   ├── auth_service.py
+│   │   ├── campaign_service.py
+│   │   ├── esms_service.py
+│   │   ├── rate_limiter.py
+│   │   ├── sms_gateway_service.py
+├── docs/
+│   ├── android_sms_gateway_setup.md
+├── frontend/
+│   ├── .env.example
+│   ├── .gitignore
+│   ├── eslint.config.js
+│   ├── index.html
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── README.md
+│   ├── vite.config.js
+│   ├── public/
+│   │   ├── favicon.svg
+│   │   ├── icons.svg
+│   ├── src/
+│   │   ├── App.jsx
+│   │   ├── index.css
+│   │   ├── main.jsx
+│   │   ├── assets/
+│   │   ├── components/
+│   │   │   ├── Layout.jsx
+│   │   │   ├── Sidebar.jsx
+│   │   ├── contexts/
+│   │   │   ├── AuthContext.jsx
+│   │   ├── pages/
+│   │   │   ├── Admin.jsx
+│   │   │   ├── Dashboard.jsx
+│   │   │   ├── Devices.jsx
+│   │   │   ├── Login.jsx
+│   │   │   ├── Logs.jsx
+│   │   │   ├── Overview.jsx
+│   │   │   ├── Settings.jsx
+│   │   ├── utils/
+│   │   │   ├── constants.js
+│   │   │   ├── fileParser.js
+│   │   │   ├── smsPolling.js

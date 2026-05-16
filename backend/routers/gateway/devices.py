@@ -72,3 +72,24 @@ def gateway_update_device(device_id: str, payload: GatewayDeviceUpdate, req: Req
     db.commit()
     log_audit(db, action="device.update", user_id=current_user.id, target_type="gateway_device", target_id=device_id, details=changes, ip_address=get_client_ip(req))
     return {"status": "updated", "device_id": device_id}
+
+
+@router.delete("/devices/{device_id}")
+def gateway_delete_device(device_id: str, req: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """Soft-delete a GatewayDevice by setting `is_active` to False.
+
+    Only the device owner or an admin can delete a device. Records are kept
+    for audit/history. If you need hard-delete, run a separate db cleanup.
+    """
+    device = db.query(GatewayDevice).filter(GatewayDevice.id == device_id).first()
+    if not device:
+        raise HTTPException(status_code=404, detail="Khong tim thay thiet bi")
+    if current_user.role != "admin" and device.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Khong co quyen")
+
+    # Hard delete: remove the device record from DB
+    db.delete(device)
+    db.commit()
+
+    log_audit(db, action="device.delete", user_id=current_user.id, target_type="gateway_device", target_id=device_id, details={"deleted": True}, ip_address=get_client_ip(req))
+    return {"status": "deleted", "device_id": device_id}

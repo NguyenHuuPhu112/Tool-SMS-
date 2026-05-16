@@ -123,22 +123,16 @@ Neu thay trang web hoac thong bao "API is running" → thanh cong!
 
 ## 6. Cau Hinh Mang
 
-### Truong hop 1: FastAPI chay tren cung mang LAN
 
-Khong can cau hinh them. Chi can su dung IP noi bo cua dien thoai.
 
-```
-ANDROID_SMS_API_URL=http://192.168.1.100:8080/v1/sms
-```
+### Truong hop 1: FastAPI chay tren Cloud/VPS (Khuyen nghi su dung Tailscale )
 
-### Truong hop 2: FastAPI chay tren Cloud/VPS (Khuyen nghi su dung Tailscale hoac ZeroTier)
-
-De he thong hoat dong on dinh va bao mat khi backend nam tren Cloud/VPS, dien thoai Android nam sau NAT (mang gia dinh) thi **Tailscale** hoac **ZeroTier** la lua chon toi uu:
+De he thong hoat dong on dinh va bao mat khi backend nam tren Cloud/VPS, dien thoai Android nam sau NAT (mang gia dinh) thi **Tailscale** la lua chon toi uu:
 
 | Giai phap | Do kho | Bao mat | Ghi chu |
 |-----------|--------|---------|---------|
 | **Tailscale (Uu tien)** | De | Cao | De cai dat, quan ly truc quan, khuyen dung nhat |
-| **ZeroTier (Du phong)** | De | Cao | Tao mang ao mien phi, tot neu da quen dashboard |
+
 | **WireGuard VPN** | Trung binh | Cao | Hieu nang cao, can tu setup |
 
 #### Cac thanh phan kien truc khi deploy len VPS

@@ -2,7 +2,7 @@ import React, { useState, useContext } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
-import { Smartphone, Plus, Power, Edit2, Activity } from 'lucide-react';
+import { Smartphone, Plus, Power, Edit2, Activity, Trash2 } from 'lucide-react';
 import { AuthContext } from '../contexts/AuthContext';
 import { format } from 'date-fns';
 
@@ -57,6 +57,27 @@ function Devices() {
       }).catch(() => {});
     },
     onError: () => toast.error('Lỗi khi lưu thiết bị')
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (deviceId) => axios.delete(`/api/gateway/devices/${deviceId}`),
+    // Optimistic update: remove device from cache immediately
+    onMutate: async (deviceId) => {
+      await queryClient.cancelQueries(['devices']);
+      const previous = queryClient.getQueryData(['devices']);
+      queryClient.setQueryData(['devices'], old => (old || []).filter(d => d.id !== deviceId));
+      return { previous };
+    },
+    onError: (err, deviceId, context) => {
+      toast.error('Lỗi khi xóa thiết bị');
+      if (context?.previous) queryClient.setQueryData(['devices'], context.previous);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries(['devices']);
+    },
+    onSuccess: () => {
+      toast.success('Đã xóa thiết bị');
+    }
   });
 
   const openCreateModal = () => {
@@ -140,12 +161,26 @@ function Devices() {
               </div>
 
               <div className="mt-6 pt-4 border-t border-white/5 flex justify-end">
-                <button 
-                  onClick={() => openEditModal(device)}
-                  className="text-xs flex items-center text-gray-400 hover:text-indigo-400 transition"
-                >
-                  <Edit2 className="w-3 h-3 mr-1" /> Chỉnh sửa
-                </button>
+                <div className="flex items-center gap-3">
+                  <button 
+                    onClick={() => openEditModal(device)}
+                    className="text-xs flex items-center text-gray-400 hover:text-indigo-400 transition"
+                  >
+                    <Edit2 className="w-3 h-3 mr-1" /> Chỉnh sửa
+                  </button>
+                  {(isAdmin || device.user_id === user?.id) && (
+                    <button
+                      onClick={() => {
+                        if (window.confirm('Bạn có chắc muốn xóa thiết bị này?')) {
+                          deleteMutation.mutate(device.id);
+                        }
+                      }}
+                      className="text-xs flex items-center text-red-400 hover:text-red-300 transition"
+                    >
+                      <Trash2 className="w-3 h-3 mr-1" /> Xóa
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           ))

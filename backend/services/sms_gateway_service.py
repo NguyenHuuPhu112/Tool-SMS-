@@ -24,7 +24,7 @@ from datetime import datetime, timedelta
 import httpx
 from sqlalchemy.orm import Session
 
-from models.database import GatewaySMSLog, GatewayDevice, Setting, SessionLocal
+from models.database import GatewaySMSLog, GatewayDevice, Setting, SessionLocal, User
 
 logger = logging.getLogger("sms_gateway")
 logger.setLevel(logging.INFO)

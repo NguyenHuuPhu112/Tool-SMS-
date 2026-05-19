@@ -13,7 +13,7 @@ function Devices() {
 
   const [showModal, setShowModal] = useState(false);
   const [editingDevice, setEditingDevice] = useState(null);
-  const [formData, setFormData] = useState({ name: '', base_url: '', api_key: '', is_active: true });
+  const [formData, setFormData] = useState({ name: '', base_url: '', api_key: '', is_active: true, provider: '', is_default: false, daily_limit: 0 });
 
   const { data: devices, isLoading } = useQuery({
     queryKey: ['devices'],
@@ -82,13 +82,13 @@ function Devices() {
 
   const openCreateModal = () => {
     setEditingDevice(null);
-    setFormData({ name: '', base_url: 'http://100.120.152.19:8082/', api_key: '', is_active: true });
+    setFormData({ name: '', base_url: 'http://100.120.152.19:8082/', api_key: '', is_active: true, provider: '', is_default: false, daily_limit: 0 });
     setShowModal(true);
   };
 
   const openEditModal = (device) => {
     setEditingDevice(device);
-    setFormData({ name: device.name, base_url: device.base_url, api_key: '', is_active: device.is_active });
+    setFormData({ name: device.name, base_url: device.base_url, api_key: '', is_active: device.is_active, provider: device.provider || '', is_default: device.is_default || false, daily_limit: device.daily_limit || 0 });
     setShowModal(true);
   };
 
@@ -125,10 +125,22 @@ function Devices() {
                     <Smartphone className="w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-white text-lg">{device.name}</h3>
-                    <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded-md mt-1 inline-block ${device.status === 'online' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
-                      {device.status}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-bold text-white text-lg">{device.name}</h3>
+                      {device.is_default && (
+                        <span className="bg-blue-500/20 text-blue-400 text-[10px] px-2 py-0.5 rounded-full border border-blue-500/30">Mặc định</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded-md inline-block ${device.status === 'online' ? 'bg-emerald-500/10 text-emerald-400' : device.status === 'unauthorized' ? 'bg-orange-500/10 text-orange-400' : 'bg-red-500/10 text-red-400'}`}>
+                        {device.status}
+                      </span>
+                      {device.provider && (
+                        <span className="text-[10px] uppercase font-bold px-2 py-1 rounded-md inline-block bg-gray-800 text-gray-400">
+                          {device.provider}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
                 
@@ -144,7 +156,14 @@ function Devices() {
               <div className="space-y-2 mt-6">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">IP / URL:</span>
-                  <span className="text-gray-300 font-mono text-xs">{device.base_url}</span>
+                  <span className="text-gray-300 font-mono text-xs truncate max-w-[150px]">{device.base_url}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Đã gửi hôm nay:</span>
+                  <span className="text-gray-300 font-mono text-xs">
+                    <span className="text-indigo-400 font-bold">{device.sent_today || 0}</span> 
+                    {device.daily_limit > 0 ? ` / ${device.daily_limit}` : ' (Không giới hạn)'}
+                  </span>
                 </div>
                 {isAdmin && (
                   <div className="flex justify-between text-sm">
@@ -207,16 +226,47 @@ function Devices() {
                 <input 
                   type="url" value={formData.base_url} onChange={e => setFormData({...formData, base_url: e.target.value})}
                   className="w-full bg-black/50 border border-gray-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500"
-                  placeholder="VD: http://100.120.152.19:8082/ (ví dụ Traccar endpoint)" required
+                  placeholder="VD: http://100.120.152.19:8082/" required
                 />
               </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Nhà mạng (Tùy chọn)</label>
+                  <select 
+                    value={formData.provider} onChange={e => setFormData({...formData, provider: e.target.value})}
+                    className="w-full bg-black/50 border border-gray-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500"
+                  >
+                    <option value="">-- Chọn --</option>
+                    <option value="Viettel">Viettel</option>
+                    <option value="MobiFone">MobiFone</option>
+                    <option value="VinaPhone">VinaPhone</option>
+                    <option value="Vietnamobile">Vietnamobile</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Giới hạn ngày</label>
+                  <input 
+                    type="number" value={formData.daily_limit} onChange={e => setFormData({...formData, daily_limit: parseInt(e.target.value) || 0})}
+                    className="w-full bg-black/50 border border-gray-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500"
+                    placeholder="0 = Không giới hạn" min="0"
+                  />
+                </div>
+              </div>
               <div>
-                <label className="block text-sm text-gray-400 mb-1">API Key (Tùy chọn)</label>
+                <label className="block text-sm text-gray-400 mb-1">API Key (Chỉ đổi khi cần)</label>
                 <input 
                   type="password" value={formData.api_key} onChange={e => setFormData({...formData, api_key: e.target.value})}
-                  className="w-full bg-black/50 border border-gray-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500"
-                  placeholder="Để trống nếu app không cài mật khẩu"
+                  className="w-full bg-black/50 border border-gray-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 placeholder-gray-600"
+                  placeholder={editingDevice ? "******** (Nhập để đổi)" : "Để trống nếu không dùng"}
                 />
+              </div>
+              <div className="flex items-center gap-2 mt-2">
+                <input 
+                  type="checkbox" id="is_default" 
+                  checked={formData.is_default} onChange={e => setFormData({...formData, is_default: e.target.checked})}
+                  className="w-4 h-4 text-indigo-600 bg-gray-800 border-gray-700 rounded focus:ring-indigo-500"
+                />
+                <label htmlFor="is_default" className="text-sm text-gray-300">Đặt làm thiết bị gửi SMS mặc định</label>
               </div>
               
               <div className="flex justify-end space-x-3 mt-8">

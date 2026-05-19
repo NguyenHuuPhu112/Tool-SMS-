@@ -299,10 +299,7 @@ function Dashboard() {
   }, {});
 
   return (
-    <div className="min-h-screen bg-[#09090b] text-gray-100 p-4 md:p-8 font-sans selection:bg-indigo-500 selection:text-white">
-      <Toaster position="top-right" />
-      
-      <div className="max-w-6xl mx-auto">
+    <div className="max-w-6xl mx-auto space-y-6">
         {/* HEADER */}
         <header className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-4 animate-fade-in-down">
           <div className="flex items-center gap-4">
@@ -523,7 +520,7 @@ function Dashboard() {
 
           </div>
         </main>
-      </div>
+
 
       {/* ─── Settings Modal ─── */}
       {showSettings && (

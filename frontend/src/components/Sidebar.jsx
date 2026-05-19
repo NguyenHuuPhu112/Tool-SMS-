@@ -11,12 +11,15 @@ import {
 } from 'lucide-react';
 import { AuthContext } from '../contexts/AuthContext';
 
-function Sidebar() {
+import { X as CloseIcon } from 'lucide-react';
+
+function Sidebar({ isOpen, onClose }) {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const handleLogout = () => {
     logout();
+    if (onClose) onClose();
     navigate('/login');
   };
 
@@ -32,15 +35,29 @@ function Sidebar() {
     navItems.push({ name: 'Quản trị viên', path: '/admin', icon: Shield });
   }
 
+  const handleLinkClick = () => {
+    if (onClose) onClose();
+  };
+
   return (
-    <div className="w-64 bg-[#09090b] border-r border-white/5 flex flex-col h-screen fixed top-0 left-0">
-      <div className="p-6 flex items-center gap-3">
-        <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-lg">
-          <Smartphone className="w-6 h-6 text-white" />
+    <aside className={`w-64 bg-[#09090b] border-r border-white/5 flex flex-col h-screen fixed top-0 left-0 z-50 transition-transform duration-300 ease-in-out lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <div className="p-6 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-lg">
+            <Smartphone className="w-6 h-6 text-white" />
+          </div>
+          <h1 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">
+              TOOL SMS 
+          </h1>
         </div>
-        <h1 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">
-            TOOL SMS 
-        </h1>
+        {onClose && (
+          <button 
+            onClick={onClose} 
+            className="lg:hidden p-2 text-gray-400 hover:text-white bg-white/5 rounded-xl border border-white/10"
+          >
+            <CloseIcon className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
       <nav className="flex-1 px-4 py-4 space-y-2">
@@ -48,6 +65,7 @@ function Sidebar() {
           <NavLink
             key={item.path}
             to={item.path}
+            onClick={handleLinkClick}
             className={({ isActive }) =>
               `flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
                 isActive 
@@ -75,7 +93,7 @@ function Sidebar() {
           Đăng xuất
         </button>
       </div>
-    </div>
+    </aside>
   );
 }
 

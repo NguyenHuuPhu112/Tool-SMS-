@@ -1,0 +1,7 @@
+
+# Local runtime / database / backup files
+backend/last_payload.json
+*.db
+*.db-*
+*.backup_*
+deploy_to_vps.ps1

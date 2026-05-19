@@ -367,6 +367,16 @@ pending/queued → cancelled (admin huy)
 
 ## 11. Rate Limit va Chong Gui Trung
 
+> [!IMPORTANT]
+> **CẤU HÌNH THỬ NGHIỆM (TESTING ENVIRONMENT BYPASS)**:
+> Hiện tại, ba lớp kiểm tra trùng lặp và giới hạn gửi tin nhắn đã được **tạm thời vô hiệu hóa (comment out)** để phục vụ quá trình test gửi lặp số:
+> 
+> 1. **Lọc trùng số điện thoại trong file (Frontend)**: Vô hiệu hóa ở [fileParser.js](file:///d:/Tool%20SMS/frontend/src/utils/fileParser.js#L173-L180).
+> 2. **Chống gửi lặp request_id (Backend)**: Vô hiệu hóa ở [sms.py](file:///d:/Tool%20SMS/backend/routers/gateway/sms.py#L24-L35).
+> 3. **Giới hạn số lượng tin/10 phút gửi cho 1 số (Backend)**: Vô hiệu hóa ở [rate_limiter.py](file:///d:/Tool%20SMS/backend/services/rate_limiter.py#L81-L86).
+> 
+> *Lưu ý: Hãy bỏ comment và khôi phục các hàm này khi chạy chính thức.*
+
 ### Rate limit 3 tang
 
 | Tang | Gioi han | Mac dinh | Env var |
@@ -506,6 +516,52 @@ Trong truong hop log ghi nhan trang thai **Gateway da nhan (HTTP 200 OK)** nhung
    - De kiem tra xem endpoint nao dang ket noi, viet 1 doan script nho bang python thu gui GET request (voi timeout=5) toi tat ca cac URL. URL nao tra ve HTTP 200 thi dung URL do làm `base_url` cho thiet bi.
    - Nen de-active cac thiet bi su dung Public IP Timeout de tang toc he thong retry.
 
+### Case Study: Lỗi cấu hình thiếu API Key trên VPS (Traccar trả về 401)
+
+**Tình huống:** Frontend báo trạng thái "gateway_accepted" nhưng thực tế điện thoại không nhận được SMS. 
+
+**Nguyên nhân gốc rễ:** Khi deploy lên VPS Linux, file cấu hình của backend (`/var/www/sms-gateway/backend/.env`) bị thiếu biến `ANDROID_SMS_API_KEY`. Do đó, khi backend gọi sang Traccar Android Gateway, request bị thiếu header `Authorization: <key>`. Traccar Gateway từ chối yêu cầu và trả về lỗi `HTTP/1.1 401 Unauthorized`. 
+*(Lưu ý: Trạng thái `gateway_accepted` đôi khi gây nhầm lẫn là đã gửi thành công, nhưng thực tế nó chỉ có nghĩa là đã kết nối được tới Android Gateway. Nếu thiếu Key hoặc bị lỗi cấu hình, SMS vẫn không đến tay người nhận).*
+
+**Cách khắc phục và Checklist tránh lỗi:**
+
+Mỗi lần thay đổi thiết bị Gateway, đổi IP Tailscale, đổi cổng, hoặc tạo API Key mới, hãy thực hiện đúng checklist sau trên VPS:
+
+1. **Kiểm tra file `.env` của backend:**
+   ```bash
+   cd /var/www/sms-gateway/backend
+   cat .env
+   ```
+   Đảm bảo có đủ 2 dòng cấu hình bắt buộc:
+   ```env
+   ANDROID_SMS_API_URL=http://100.120.152.19:8082/
+   ANDROID_SMS_API_KEY=key_trong_app_Traccar
+   ```
+
+2. **Test trực tiếp Traccar Gateway bằng cURL (từ VPS):**
+   ```bash
+   curl -v -X POST "http://100.120.152.19:8082/" \
+     -H "Content-Type: application/json" \
+     -H "Authorization: <key_trong_app_Traccar>" \
+     -d '{"to":"0397534239","message":"Test truc tiep gateway"}'
+   ```
+   Nếu cấu hình đúng và Gateway nhận lệnh OK, kết quả sẽ trả về `HTTP/1.1 200 OK`.
+
+3. **Khởi động lại dịch vụ Backend:**
+   ```bash
+   sudo systemctl restart sms-backend.service
+   ```
+
+4. **Kiểm tra Health Check API:**
+   ```bash
+   curl http://127.0.0.1:8000/api/gateway/health
+   ```
+   Nếu trả về 200 OK, dịch vụ đã chạy bình thường. Cuối cùng, thực hiện test gửi SMS từ giao diện Frontend.
+
+**Khuyến nghị giao diện & Vận hành:** 
+- Frontend nên chỉ hiển thị trạng thái là **"Gateway đã nhận"** thay vì "Đã gửi thành công" để phản ánh chính xác trạng thái kỹ thuật (không có API Callback từ SMS Manager của Android để xác nhận 100% đến máy đích).
+- Điện thoại làm Gateway cần phải luôn được cấu hình ổn định: cấp quyền `SEND_SMS`, tắt tối ưu hóa pin, SIM có đủ tiền/gói cước, và cấu hình Rate Limit phù hợp để không bị nhà mạng khóa SIM do nghi ngờ spam.
+
 ---
 
 ## 16. API Endpoints
@@ -525,3 +581,127 @@ Trong truong hop log ghi nhan trang thai **Gateway da nhan (HTTP 200 OK)** nhung
 | `PUT` | `/api/gateway/devices/{id}` | JWT (admin) | Sua thiet bi |
 | `GET` | `/api/gateway/settings` | JWT | Xem cau hinh gateway |
 | `POST` | `/api/gateway/settings` | JWT (admin) | Cap nhat cau hinh |
+
+---
+
+## 17. Nâng cao kiến trúc: Quản lý đa thiết bị Gateway
+
+Để tránh lỗi cấu hình cứng trong `.env` và hỗ trợ mở rộng quy mô (SIM Farm, nhiều điện thoại), hệ thống cần chuyển sang **Kiến trúc quản lý thiết bị hoàn toàn qua Database** (`gateway_devices`). Khi đó, `.env` chỉ lưu cấu hình cốt lõi của ứng dụng (VD: `SECRET_KEY`, `DATABASE_URL`), còn thông tin kết nối Gateway cụ thể nằm ở bảng `gateway_devices`.
+
+### 17.1. Cấu trúc bảng `gateway_devices`
+
+Bảng `gateway_devices` lưu trữ đầy đủ:
+
+- `id`: Mã thiết bị
+- `name`: Tên thiết bị, ví dụ Phone 1, Samsung Vina
+- `provider`: Nhà mạng SIM, ví dụ Viettel, MobiFone, VinaPhone
+- `gateway_url`: URL Android Gateway, ví dụ `http://100.120.152.19:8082/`
+- `api_key`: API key riêng của thiết bị Traccar
+- `status`: `online`, `offline`, `unauthorized`, `error`
+- `is_active`: bật/tắt thiết bị
+- `is_default`: thiết bị mặc định nếu request không chỉ định `device_id`
+- `daily_limit`: giới hạn gửi mỗi ngày
+- `sent_today`: số tin đã gửi trong ngày
+- `last_health_check`: thời điểm kiểm tra gần nhất
+- `last_error`: lỗi gần nhất nếu có
+
+*Lưu ý:* `api_key` không nên hiển thị đầy đủ trên giao diện. UI chỉ nên che đi, ví dụ: `044d****1d03`.
+
+### 17.2. Bổ sung bảng `gateway_sms_logs`
+
+Bảng `gateway_sms_logs` nên có thêm:
+- `device_id`
+- `gateway_url`
+- `gateway_response`
+- `error_message`
+- `status`
+- `retry_count`
+
+Như vậy mỗi tin nhắn đều truy vết được rõ ràng: Tin này gửi qua thiết bị nào, Gateway URL nào, Traccar trả về gì, có lỗi 401, timeout, offline hay không.
+
+Ví dụ log chuẩn:
+```yaml
+phone_number: 0397534239
+device_id: phone_1
+status: gateway_accepted
+gateway_url: http://100.120.152.19:8082/
+error_message: null
+```
+
+### 17.3. Luồng xử lý đa thiết bị khi gửi SMS
+
+Khi giao diện người dùng gửi danh sách SMS, xử lý backend theo luồng:
+1. Nhận danh sách số điện thoại
+2. Chuẩn hóa số điện thoại
+3. Xác định thiết bị gửi
+4. Lấy `gateway_url` + `api_key` từ `gateway_devices`
+5. Gửi HTTP POST sang Traccar Gateway
+6. Ghi log từng tin vào `gateway_sms_logs` (kèm `device_id`)
+7. Frontend poll trạng thái từng log
+
+**Thứ tự ưu tiên định tuyến thiết bị của hệ thống (Đã được triển khai ở Backend):**
+
+Khi người dùng gửi tin nhắn (hoặc hệ thống tự động gửi), Backend sẽ chọn thiết bị gửi theo thứ tự ưu tiên giảm dần dưới đây:
+
+1. **Ưu tiên 1 - Lựa chọn thủ công (`manual`)**: Nếu giao dịch gửi chỉ định rõ mã thiết bị (`device_id`), hệ thống sẽ bỏ qua mọi quy tắc tự động và dùng đúng thiết bị được yêu cầu.
+2. **Ưu tiên 2 - Khớp thiết bị cùng mạng di động (`carrier_match`)**: Hệ thống tự động phân tích đầu số điện thoại để nhận diện nhà mạng (Ví dụ: `Viettel`, `VinaPhone`, `MobiFone`). Nếu có thiết bị đang hoạt động (`is_active = True`) được cấu hình khớp với nhà mạng di động này, hệ thống sẽ sử dụng thiết bị đó để gửi nhằm tối ưu cước và tỷ lệ nhận tin.
+3. **Ưu tiên 3 - Thiết bị mặc định (`default`)**: Nếu **không tìm thấy** thiết bị nào cùng mạng di động đang hoạt động (hoặc số điện thoại là mạng nước ngoài/lạ), hệ thống sẽ tự động chuyển sang sử dụng thiết bị được đánh dấu làm mặc định (`is_default = True`).
+4. **Ưu tiên 4 - Thiết bị ngẫu nhiên bất kỳ (`any_online`)**: Nếu không có thiết bị mặc định được cấu hình, hệ thống sẽ lấy thiết bị đầu tiên đang hoạt động (`is_active = True`) trong danh sách cơ sở dữ liệu.
+5. **Cấu hình fallback từ file môi trường (`env_fallback`)**: Nếu cơ sở dữ liệu hoàn toàn trống, hệ thống sẽ lấy cấu hình Gateway mặc định lưu trong tệp tin cấu hình hệ thống `.env` (`ANDROID_SMS_API_URL`).
+
+### 17.4. Trạng thái & Kiểm tra sức khỏe (Health Check)
+
+Trang Admin (Thiết bị) nên có các nút: **Kiểm tra kết nối**, **Gửi tin test**, **Bật / Tắt**, **Đặt mặc định**, **Xem log thiết bị**.
+
+Backend cần phân loại lỗi rõ ràng:
+- `online`: Gateway trả HTTP 200.
+- `unauthorized`: Gateway trả HTTP 401 (sai hoặc thiếu `api_key`).
+- `offline`: Timeout, không kết nối được IP/Port.
+- `error`: Gateway trả 5xx hoặc lỗi khác.
+
+Ví dụ lệnh Test trực tiếp:
+```bash
+curl -v -X POST "http://100.120.152.19:8082/" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: API_KEY_CUA_THIET_BI" \
+  -d '{"to":"0397534239","message":"Test gateway"}'
+```
+
+### 17.5. Chuyển đổi dự phòng (Failover) và chống gửi trùng lặp
+
+Failover là cần thiết nhưng phải làm cẩn thận để tránh gửi trùng:
+*(Ví dụ: Gateway A thực tế đã nhận lệnh gửi SMS đi, nhưng response HTTP bị timeout trả về Backend. Backend tưởng lỗi nên gửi lại qua Gateway B -> Người dùng nhận 2 tin).*
+
+**Quy tắc an toàn:**
+- Nếu lỗi `401 Unauthorized` → Không retry qua thiết bị đó, báo lỗi unauthorized.
+- Nếu `Offline/Timeout` → Có thể retry có giới hạn (cần dùng `request_id` hoặc idempotency_key).
+- Nếu đã `gateway_accepted` → Không tự gửi lại nữa.
+- Nếu retry sang thiết bị khác → Ghi rõ `previous_device_id` và `retry_reason` vào log.
+
+### 17.6. Vai trò của `.env`
+
+Sau khi chuyển sang multi-device, `.env` **CHỈ** cần giữ:
+```env
+SECRET_KEY=...
+DATABASE_URL=...
+JWT_EXPIRE_MINUTES=...
+```
+
+**Không** dùng `.env` để lưu:
+```env
+ANDROID_SMS_API_URL=...
+ANDROID_SMS_API_KEY=...
+```
+*(Tuy nhiên, có thể giữ các biến này làm fallback tạm thời trong giai đoạn chuyển đổi, nếu database chưa có thiết bị nào. Sau khi hệ thống ổn định, nên bỏ fallback để tránh nhầm lẫn).*
+
+---
+
+### Kết luận triển khai (Kế hoạch nâng cấp)
+
+Phần này sẽ được đưa vào lộ trình nâng cấp với các bước:
+- **Bước 1:** Cập nhật bảng `gateway_devices` để có đầy đủ `gateway_url` + `api_key`.
+- **Bước 2:** Bổ sung `device_id` vào `gateway_sms_logs`.
+- **Bước 3:** Sửa service gửi SMS để lấy cấu hình kết nối trực tiếp từ `device_id` hoặc thiết bị mặc định trong database.
+- **Bước 4:** Thêm UI quản lý thiết bị, che API key, test connection, gửi SMS test, set default.
+
+*Ưu tiên:* Đảm bảo log ghi nhận rõ `device_id` và UI báo lỗi minh bạch (`unauthorized`/`offline`), từ đó loại bỏ hoàn toàn các lỗi sập hệ thống do thiếu `ANDROID_SMS_API_KEY` trong `.env`.

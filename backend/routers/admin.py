@@ -14,12 +14,18 @@ def get_users(db: Session = Depends(get_db), current_admin: User = Depends(get_c
     # Calculate usage for current month
     now = datetime.utcnow()
     start_of_month = datetime(now.year, now.month, 1)
+    start_of_day = datetime(now.year, now.month, now.day)
     
     result = []
     for u in users:
-        usage = db.query(SMSLog).filter(
+        monthly_usage = db.query(SMSLog).filter(
             SMSLog.user_id == u.id,
             SMSLog.sent_at >= start_of_month
+        ).count()
+
+        daily_usage = db.query(SMSLog).filter(
+            SMSLog.user_id == u.id,
+            SMSLog.sent_at >= start_of_day
         ).count()
         
         result.append({
@@ -27,9 +33,11 @@ def get_users(db: Session = Depends(get_db), current_admin: User = Depends(get_c
             "username": u.username,
             "role": u.role,
             "monthly_quota": u.monthly_quota,
+            "daily_quota": u.daily_quota,
             "allow_shared_devices": u.allow_shared_devices,
             "created_at": u.created_at,
-            "current_month_usage": usage
+            "current_month_usage": monthly_usage,
+            "current_day_usage": daily_usage
         })
     return result
 
@@ -49,6 +57,7 @@ def create_user(payload: UserCreate, db: Session = Depends(get_db), current_admi
         password_hash=hashed,
         role=payload.role,
         monthly_quota=payload.monthly_quota,
+        daily_quota=payload.daily_quota,
         allow_shared_devices=payload.allow_shared_devices
     )
     db.add(new_user)
@@ -70,6 +79,8 @@ def update_user(user_id: str, payload: UserUpdate, db: Session = Depends(get_db)
         user.role = payload.role
     if payload.monthly_quota is not None:
         user.monthly_quota = payload.monthly_quota
+    if payload.daily_quota is not None:
+        user.daily_quota = payload.daily_quota
     if payload.allow_shared_devices is not None:
         user.allow_shared_devices = payload.allow_shared_devices
         

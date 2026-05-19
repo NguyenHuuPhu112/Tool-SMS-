@@ -32,6 +32,7 @@ class UserCreate(BaseModel):
     password: str
     role: str = "user"
     monthly_quota: int = 1000
+    daily_quota: int = 100
     allow_shared_devices: bool = False
 
 
@@ -39,6 +40,7 @@ class UserUpdate(BaseModel):
     password: Optional[str] = None
     role: Optional[str] = None
     monthly_quota: Optional[int] = None
+    daily_quota: Optional[int] = None
     allow_shared_devices: Optional[bool] = None
 
 
@@ -57,6 +59,7 @@ class GatewaySMSRequest(BaseModel):
     phone_number: str
     message: str
     request_id: Optional[str] = None
+    device_id: Optional[str] = None
 
     @field_validator("phone_number")
     @classmethod
@@ -85,6 +88,16 @@ class GatewaySMSResponse(BaseModel):
     request_id: Optional[str] = None
 
 
+class GatewaySMSCallbackRequest(BaseModel):
+    """Request body cho SMS status callback từ Android Gateway."""
+    request_id: str
+    phone_number: str
+    status: str
+    device_id: Optional[str] = None
+    message: Optional[str] = None
+    raw_payload: Optional[dict] = None
+
+
 class GatewayLogResponse(BaseModel):
     """Serialize chi tiết một bản ghi SMS log."""
     id: str
@@ -93,6 +106,7 @@ class GatewayLogResponse(BaseModel):
     message: str
     status: str
     provider: str
+    device_id: Optional[str] = None
     gateway_url: Optional[str] = None
     gateway_response: Optional[str] = None
     error_message: Optional[str] = None
@@ -104,6 +118,10 @@ class GatewayLogResponse(BaseModel):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     sent_at: Optional[datetime] = None
+    delivery_status: Optional[str] = None
+    delivery_error: Optional[str] = None
+    callback_payload: Optional[str] = None
+    delivered_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -126,6 +144,9 @@ class GatewayDeviceCreate(BaseModel):
     base_url: str
     api_key: Optional[str] = None
     is_active: bool = True
+    provider: Optional[str] = None
+    is_default: bool = False
+    daily_limit: int = 0
 
 
 class GatewayDeviceUpdate(BaseModel):
@@ -134,14 +155,21 @@ class GatewayDeviceUpdate(BaseModel):
     base_url: Optional[str] = None
     api_key: Optional[str] = None
     is_active: Optional[bool] = None
+    provider: Optional[str] = None
+    is_default: Optional[bool] = None
+    daily_limit: Optional[int] = None
 
 
 class GatewayDeviceResponse(BaseModel):
     """Serialize thiết bị gateway."""
     id: str
     name: str
+    provider: Optional[str] = None
     base_url: str
     is_active: bool
+    is_default: bool
+    daily_limit: int
+    sent_today: int
     status: str
     last_health_check_at: Optional[datetime] = None
     last_error: Optional[str] = None

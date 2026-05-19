@@ -2,6 +2,7 @@ from fastapi import Request
 from sqlalchemy.orm import Session
 from models.database import GatewaySMSLog, Setting
 import os
+from services.phone_utils import normalize_vn_phone, detect_vn_carrier
 
 def get_client_ip(request: Request) -> str:
     forwarded = request.headers.get("X-Forwarded-For")
@@ -17,6 +18,10 @@ def serialize_log(log: GatewaySMSLog) -> dict:
         "message": log.message,
         "status": log.status,
         "provider": log.provider,
+        "detected_provider": getattr(log, "detected_provider", None),
+        "requested_provider": getattr(log, "requested_provider", None),
+        "routing_strategy": getattr(log, "routing_strategy", None),
+        "device_id": log.device_id,
         "gateway_url": log.gateway_url,
         "gateway_response": log.gateway_response,
         "error_message": log.error_message,
@@ -36,16 +41,25 @@ def create_sms_log(
     phone_number: str,
     message: str,
     user_id: str | None = None,
+    device_id: str | None = None,
 ) -> GatewaySMSLog:
     setting_retries = db.query(Setting).filter_by(key="max_sms_retries").first()
     max_retries = int(setting_retries.value) if setting_retries and setting_retries.value.isdigit() else int(os.getenv("MAX_SMS_RETRIES", "3"))
 
+    # Normalize phone and detect provider for routing decisions
+    normalized_phone = normalize_vn_phone(phone_number)
+    detected = detect_vn_carrier(normalized_phone)
+
     log_entry = GatewaySMSLog(
         request_id=request_id,
-        phone_number=phone_number,
+        phone_number=normalized_phone,
         message=message,
         status="pending",
         provider="android_sms_gateway",
+        device_id=device_id,
+        requested_provider=None,
+        detected_provider=detected,
+        routing_strategy=("manual" if device_id else "auto"),
         max_retries=max_retries,
         created_by=user_id,
     )

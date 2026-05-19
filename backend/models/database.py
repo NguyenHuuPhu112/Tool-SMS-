@@ -51,6 +51,7 @@ class User(Base):
     password_hash = Column(String)
     role = Column(String, default="user")  # "admin" or "user"
     monthly_quota = Column(Integer, default=1000)
+    daily_quota = Column(Integer, default=100)
     allow_shared_devices = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -132,8 +133,12 @@ class GatewaySMSLog(Base):
     message = Column(Text, nullable=False)
     status = Column(String, nullable=False, default="pending", index=True)
     provider = Column(String, nullable=False, default="android_sms_gateway")
+    device_id = Column(String, ForeignKey("gateway_devices.id"), nullable=True, index=True)
     gateway_url = Column(String, nullable=True)
     gateway_response = Column(Text, nullable=True)
+    detected_provider = Column(String, nullable=True)
+    requested_provider = Column(String, nullable=True)
+    routing_strategy = Column(String, nullable=True)
     error_message = Column(String, nullable=True)
     retry_count = Column(Integer, default=0)
     max_retries = Column(Integer, default=3)
@@ -143,6 +148,10 @@ class GatewaySMSLog(Base):
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     sent_at = Column(DateTime, nullable=True)
+    delivery_status = Column(String, nullable=True)
+    delivery_error = Column(String, nullable=True)
+    callback_payload = Column(Text, nullable=True)
+    delivered_at = Column(DateTime, nullable=True)
 
 
 # ─────────────────────────────────────────────────────────────
@@ -158,10 +167,14 @@ class GatewayDevice(Base):
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     name = Column(String, nullable=False)
+    provider = Column(String, nullable=True)
     base_url = Column(String, nullable=False)
     api_key = Column(String, nullable=True)
     is_active = Column(Boolean, default=True)
-    status = Column(String, default="offline")  # online, offline, error
+    is_default = Column(Boolean, default=False)
+    daily_limit = Column(Integer, default=0)
+    sent_today = Column(Integer, default=0)
+    status = Column(String, default="offline")  # online, offline, unauthorized, error
     last_health_check_at = Column(DateTime, nullable=True)
     last_error = Column(String, nullable=True)
     user_id = Column(String, ForeignKey("users.id"), nullable=True, index=True)

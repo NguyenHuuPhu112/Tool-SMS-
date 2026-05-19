@@ -78,6 +78,12 @@ def create_default_admin():
 
 
 @app.on_event("startup")
+def log_env_loaded():
+    token_loaded = os.getenv("GATEWAY_CALLBACK_TOKEN") is not None
+    print(f"GATEWAY_CALLBACK_TOKEN loaded: {token_loaded}")
+
+
+@app.on_event("startup")
 async def start_pending_worker():
     """
     Khoi dong background worker de pick up SMS pending/retrying.
@@ -93,6 +99,13 @@ async def start_pending_worker():
       - De nang cap sang Celery/RQ sau nay (thay worker nay).
     """
     asyncio.create_task(_pending_worker_loop())
+
+
+@app.on_event("startup")
+async def start_device_health_loop():
+    """Start background device health-check loop."""
+    from services.device_health_service import device_health_loop
+    asyncio.create_task(device_health_loop())
 
 
 async def _pending_worker_loop():

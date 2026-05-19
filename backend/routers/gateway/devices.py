@@ -40,16 +40,21 @@ def gateway_get_devices(db: Session = Depends(get_db), current_user: User = Depe
     if current_user.role != "admin": query = query.filter(GatewayDevice.user_id == current_user.id)
     devices = query.order_by(GatewayDevice.created_at.desc()).all()
     return [{
-        "id": d.id, "name": d.name, "base_url": d.base_url, "is_active": d.is_active,
+        "id": d.id, "name": d.name, "provider": d.provider, "base_url": d.base_url, "is_active": d.is_active,
+        "is_default": d.is_default, "daily_limit": d.daily_limit, "sent_today": d.sent_today,
         "status": d.status, "last_health_check_at": d.last_health_check_at,
         "last_error": d.last_error, "user_id": d.user_id, "created_at": d.created_at, "updated_at": d.updated_at
     } for d in devices]
 
 @router.post("/devices")
 def gateway_create_device(payload: GatewayDeviceCreate, req: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if payload.is_default:
+        db.query(GatewayDevice).filter(GatewayDevice.user_id == current_user.id).update({"is_default": False})
+
     device = GatewayDevice(
         name=payload.name, base_url=payload.base_url.rstrip("/"),
-        api_key=payload.api_key, is_active=payload.is_active, user_id=current_user.id
+        api_key=payload.api_key, is_active=payload.is_active, user_id=current_user.id,
+        provider=payload.provider, is_default=payload.is_default, daily_limit=payload.daily_limit
     )
     db.add(device)
     db.commit()
@@ -68,6 +73,13 @@ def gateway_update_device(device_id: str, payload: GatewayDeviceUpdate, req: Req
     if payload.base_url is not None: device.base_url = payload.base_url.rstrip("/"); changes["base_url"] = device.base_url
     if payload.api_key is not None: device.api_key = payload.api_key; changes["api_key"] = "***changed***"
     if payload.is_active is not None: device.is_active = payload.is_active; changes["is_active"] = payload.is_active
+    if payload.provider is not None: device.provider = payload.provider; changes["provider"] = payload.provider
+    if payload.daily_limit is not None: device.daily_limit = payload.daily_limit; changes["daily_limit"] = payload.daily_limit
+    if payload.is_default is not None:
+        if payload.is_default and not device.is_default:
+            db.query(GatewayDevice).filter(GatewayDevice.user_id == current_user.id).update({"is_default": False})
+        device.is_default = payload.is_default
+        changes["is_default"] = payload.is_default
 
     db.commit()
     log_audit(db, action="device.update", user_id=current_user.id, target_type="gateway_device", target_id=device_id, details=changes, ip_address=get_client_ip(req))

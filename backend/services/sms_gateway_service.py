@@ -25,6 +25,7 @@ import httpx
 from sqlalchemy.orm import Session
 
 from models.database import GatewaySMSLog, GatewayDevice, Setting, SessionLocal, User
+from services.phone_utils import normalize_vn_phone, detect_vn_carrier
 
 logger = logging.getLogger("sms_gateway")
 logger.setLevel(logging.INFO)
@@ -46,49 +47,73 @@ def _get_max_retries() -> int:
     return int(os.getenv("MAX_SMS_RETRIES", "3"))
 
 
-def _get_gateway_config(user_id: str | None = None) -> tuple[str, str]:
+def _get_gateway_config(user_id: str | None = None, device_id: str | None = None, detected_provider: str | None = None) -> tuple[str, str, str, str]:
     """
-    Lay URL va API key cua Android SMS Gateway.
-    Tra ve (gateway_url, api_key).
-    Uu tien: Device cua User → Kiem tra quyen dung chung → Device he thong → env.
+    Lay URL, API key va id cua Android SMS Gateway.
+    Uu tien: device_id truyền vào → Thiết bị mặc định → Thiết bị đầu tiên hợp lệ.
     """
     db = SessionLocal()
     try:
-        if user_id:
-            # 1. Tim device cua user
-            device = db.query(GatewayDevice).filter(
+        if device_id:
+            device = db.query(GatewayDevice).filter(GatewayDevice.id == device_id).first()
+            if not device or not device.is_active:
+                raise Exception(f"Thiết bị {device_id} không tồn tại hoặc đã bị tắt.")
+            return device.base_url.rstrip('/'), device.api_key or "", device.id, "manual"
+
+        # Try carrier match first when detected_provider provided
+        if not device_id and detected_provider:
+            query = db.query(GatewayDevice).filter(
                 GatewayDevice.is_active == True,
-                GatewayDevice.status == "online",
-                GatewayDevice.user_id == user_id
-            ).first()
-            if device:
-                return device.base_url.rstrip('/'), device.api_key or ""
-            
-            # Kiem tra quyen dung chung
+                GatewayDevice.provider == detected_provider
+            )
+            if user_id:
+                user = db.query(User).filter(User.id == user_id).first()
+                if not user or not user.allow_shared_devices:
+                    query = query.filter(
+                        (GatewayDevice.user_id == user_id) | (GatewayDevice.user_id == None)
+                    )
+            carrier_device = query.first()
+            if carrier_device:
+                return carrier_device.base_url.rstrip('/'), carrier_device.api_key or "", carrier_device.id, "carrier_match"
+
+        # Tìm thiết bị mặc định
+        query = db.query(GatewayDevice).filter(
+            GatewayDevice.is_active == True,
+            GatewayDevice.is_default == True
+        )
+        if user_id:
             user = db.query(User).filter(User.id == user_id).first()
             if not user or not user.allow_shared_devices:
-                raise Exception("Bạn chưa thêm thiết bị Gateway hoặc không được phép dùng thiết bị chung của hệ thống.")
+                query = query.filter(
+                    (GatewayDevice.user_id == user_id) | (GatewayDevice.user_id == None)
+                )
+        device = query.first()
 
-        # 2. Tim device chung (he thong)
-        device = db.query(GatewayDevice).filter(
-            GatewayDevice.is_active == True,
-            GatewayDevice.status == "online",
-            GatewayDevice.user_id.is_(None)
-        ).first()
         if device:
-            return device.base_url.rstrip('/'), device.api_key or ""
+            return device.base_url.rstrip('/'), device.api_key or "", device.id, "default"
 
-        # 3. Fallback: setting trong DB
-        setting = db.query(Setting).filter_by(key="android_sms_api_url").first()
-        if setting and setting.value.strip():
-            return setting.value.strip(), os.getenv("ANDROID_SMS_API_KEY", "")
+        # Tìm thiết bị hợp lệ đầu tiên
+        query = db.query(GatewayDevice).filter(GatewayDevice.is_active == True)
+        if user_id:
+            user = db.query(User).filter(User.id == user_id).first()
+            if not user or not user.allow_shared_devices:
+                query = query.filter(
+                    (GatewayDevice.user_id == user_id) | (GatewayDevice.user_id == None)
+                )
+        
+        device = query.first()
+        if device:
+            return device.base_url.rstrip('/'), device.api_key or "", device.id, "any_online"
+
+        # Fallback to .env config if provided (maintain existing behavior)
+        env_url = os.getenv("ANDROID_SMS_API_URL")
+        env_key = os.getenv("ANDROID_SMS_API_KEY", "")
+        if env_url:
+            return env_url.rstrip('/'), env_key or "", "env-fallback", "env_fallback"
+
+        raise Exception("Không tìm thấy thiết bị Gateway nào đang hoạt động.")
     finally:
         db.close()
-
-    return (
-        os.getenv("ANDROID_SMS_API_URL", "http://100.120.152.19:8082/"),
-        os.getenv("ANDROID_SMS_API_KEY", ""),
-    )
 
 
 def _is_retryable_error(exc: Exception) -> bool:
@@ -202,9 +227,22 @@ async def send_sms_via_gateway(log_id: str, phone: str, message: str):
 
         log_entry = db.query(GatewaySMSLog).filter(GatewaySMSLog.id == log_id).first()
         user_id = log_entry.created_by if log_entry else None
+        req_device_id = log_entry.device_id if log_entry else None
+        # Normalize and detect carrier
+        normalized_phone = normalize_vn_phone(phone)
+        detected_provider = detect_vn_carrier(normalized_phone)
+        if log_entry:
+            log_entry.phone_number = normalized_phone
+            log_entry.detected_provider = detected_provider
+            db.commit()
 
         try:
-            gateway_url, api_key = _get_gateway_config(user_id)
+            gateway_url, api_key, resolved_device_id, routing = _get_gateway_config(user_id, req_device_id, detected_provider)
+            if log_entry:
+                log_entry.routing_strategy = routing
+            if log_entry and log_entry.device_id != resolved_device_id:
+                log_entry.device_id = resolved_device_id
+            db.commit()
         except Exception as e:
             _update_log(db, log_id, status="failed", error_message=str(e))
             logger.error(f"[SMS Flow] Log {log_id} | failed: {e}")
@@ -258,6 +296,12 @@ async def send_sms_via_gateway(log_id: str, phone: str, message: str):
                     status="gateway_accepted",
                     gateway_response=response_text,
                 )
+                
+                device = db.query(GatewayDevice).filter(GatewayDevice.id == resolved_device_id).first()
+                if device:
+                    device.sent_today = (device.sent_today or 0) + 1
+                    db.commit()
+
                 logger.info(
                     f"[SMS Flow] Log {log_id} | phone={phone} | status=gateway_accepted | "
                     f"attempt={attempt} | http_status={response.status_code} | "
@@ -298,7 +342,22 @@ async def send_sms_via_gateway(log_id: str, phone: str, message: str):
                     logger.error(
                         f"SMS to {phone} FAILED (non-retryable): {last_error}"
                     )
+                    
+                    if isinstance(exc, httpx.HTTPStatusError) and exc.response.status_code == 401:
+                        device = db.query(GatewayDevice).filter(GatewayDevice.id == resolved_device_id).first()
+                        if device:
+                            device.status = "unauthorized"
+                            db.commit()
+                            
                     return
+
+                # If timeout or connection error mark device offline
+                if isinstance(exc, (httpx.TimeoutException, httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout)):
+                    device = db.query(GatewayDevice).filter(GatewayDevice.id == resolved_device_id).first()
+                    if device:
+                        device.status = "offline"
+                        device.last_error = last_error
+                        db.commit()
 
                 # Tang retry count
                 _update_log(

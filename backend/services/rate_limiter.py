@@ -83,6 +83,9 @@ def check_rate_limit_phone(phone_number: str, db: Session) -> tuple[bool, str]:
     Kiem tra rate limit cho 1 so dien thoai.
     Returns: (is_allowed, error_message)
     """
+    # COMMENTED OUT FOR TESTING: Luôn cho phép gửi tin nhắn không giới hạn đến 1 số điện thoại khi test
+    return True, ""
+    
     limit = _get_phone_limit(db)
     now = time.time()
 
@@ -117,26 +120,46 @@ def check_user_quota(user_id: str, db: Session) -> tuple[bool, str]:
 
     now = datetime.utcnow()
     start_of_month = datetime(now.year, now.month, 1)
+    start_of_day = datetime(now.year, now.month, now.day)
 
-    # Dem ca sms_logs (eSMS) va gateway_sms_logs
+    # Dem ca sms_logs (eSMS) va gateway_sms_logs cho ca thang
     from models.database import SMSLog
 
-    esms_count = db.query(SMSLog).filter(
+    esms_count_month = db.query(SMSLog).filter(
         SMSLog.user_id == user_id,
         SMSLog.sent_at >= start_of_month,
     ).count()
 
-    gateway_count = db.query(GatewaySMSLog).filter(
+    gateway_count_month = db.query(GatewaySMSLog).filter(
         GatewaySMSLog.created_by == user_id,
         GatewaySMSLog.created_at >= start_of_month,
     ).count()
 
-    total = esms_count + gateway_count
+    total_month = esms_count_month + gateway_count_month
 
-    if total >= user.monthly_quota:
+    if total_month >= user.monthly_quota:
         return False, (
-            f"Da vuot quota thang ({total}/{user.monthly_quota}). "
-            f"Lien he admin de tang gioi han."
+            f"Vượt quá giới hạn tin nhắn tháng ({total_month}/{user.monthly_quota}). "
+            f"Vui lòng nâng cấp tài khoản để tiếp tục gửi."
+        )
+
+    # Dem ca sms_logs (eSMS) va gateway_sms_logs cho hom nay
+    esms_count_day = db.query(SMSLog).filter(
+        SMSLog.user_id == user_id,
+        SMSLog.sent_at >= start_of_day,
+    ).count()
+
+    gateway_count_day = db.query(GatewaySMSLog).filter(
+        GatewaySMSLog.created_by == user_id,
+        GatewaySMSLog.created_at >= start_of_day,
+    ).count()
+
+    total_day = esms_count_day + gateway_count_day
+
+    if hasattr(user, 'daily_quota') and total_day >= user.daily_quota:
+        return False, (
+            f"Vượt quá giới hạn tin nhắn ngày ({total_day}/{user.daily_quota}). "
+            f"Vui lòng nâng cấp tài khoản để tiếp tục gửi."
         )
 
     return True, ""

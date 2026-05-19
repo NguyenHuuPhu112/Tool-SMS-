@@ -18,15 +18,28 @@ def send_sms_campaign(payload: SMSPayload, background_tasks: BackgroundTasks, db
     # Check quota
     now = datetime.utcnow()
     start_of_month = datetime(now.year, now.month, 1)
+    start_of_day = datetime(now.year, now.month, now.day)
+    
     current_month_usage = db.query(SMSLog).filter(
         SMSLog.user_id == current_user.id,
         SMSLog.sent_at >= start_of_month
     ).count()
     
+    current_day_usage = db.query(SMSLog).filter(
+        SMSLog.user_id == current_user.id,
+        SMSLog.sent_at >= start_of_day
+    ).count()
+    
     if current_month_usage + len(payload.phones) > current_user.monthly_quota:
         raise HTTPException(
             status_code=403, 
-            detail=f"Vượt quá giới hạn tin nhắn. Đã dùng {current_month_usage}/{current_user.monthly_quota}. Cần gửi thêm {len(payload.phones)}."
+            detail=f"Vượt quá giới hạn tin nhắn tháng ({current_month_usage}/{current_user.monthly_quota}). Vui lòng nâng cấp tài khoản để tiếp tục gửi."
+        )
+
+    if hasattr(current_user, 'daily_quota') and current_day_usage + len(payload.phones) > current_user.daily_quota:
+        raise HTTPException(
+            status_code=403, 
+            detail=f"Vượt quá giới hạn tin nhắn ngày ({current_day_usage}/{current_user.daily_quota}). Vui lòng nâng cấp tài khoản để tiếp tục gửi."
         )
     
     # 1. Tạo chiến dịch

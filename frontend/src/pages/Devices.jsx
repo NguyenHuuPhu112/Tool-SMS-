@@ -100,12 +100,12 @@ function Devices() {
   return (
     <div className="space-y-6 animate-fade-in-down h-full flex flex-col">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-white flex items-center">
-          <Smartphone className="w-6 h-6 mr-3 text-indigo-400" /> Quản lý Thiết bị (SIM Farm)
+        <h1 className="text-2xl font-bold text-gray-900 flex items-center">
+          <Smartphone className="w-6 h-6 mr-3 text-blue-600" /> Quản lý Thiết bị (SIM Farm)
         </h1>
         <button 
           onClick={openCreateModal}
-          className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl flex items-center transition"
+          className="btn-primary flex items-center"
         >
           <Plus className="w-5 h-5 mr-2" /> Thêm thiết bị
         </button>
@@ -118,25 +118,25 @@ function Devices() {
           <div className="text-gray-500">Chưa có thiết bị nào.</div>
         ) : (
           devices?.map(device => (
-            <div key={device.id || device.base_url} className={`bg-[#121214] border ${device.is_active ? 'border-white/10' : 'border-red-500/20 opacity-70'} rounded-2xl p-6 shadow-lg relative`}>
+            <div key={device.id || device.base_url} className={`card p-6 relative ${device.is_active ? '' : 'opacity-70 grayscale'}`}>
               <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-3">
-                  <div className={`p-3 rounded-xl ${device.status === 'online' && device.is_active ? 'bg-emerald-500/10 text-emerald-400' : 'bg-gray-800 text-gray-500'}`}>
+                  <div className={`p-3 rounded-xl ${device.status === 'online' && device.is_active ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-100 text-gray-500'}`}>
                     <Smartphone className="w-6 h-6" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="font-bold text-white text-lg">{device.name}</h3>
+                      <h3 className="font-bold text-gray-900 text-lg">{device.name}</h3>
                       {device.is_default && (
-                        <span className="bg-blue-500/20 text-blue-400 text-[10px] px-2 py-0.5 rounded-full border border-blue-500/30">Mặc định</span>
+                        <span className="bg-blue-50 text-blue-700 text-[10px] px-2 py-0.5 rounded-full border border-blue-200">Mặc định</span>
                       )}
                     </div>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded-md inline-block ${device.status === 'online' ? 'bg-emerald-500/10 text-emerald-400' : device.status === 'unauthorized' ? 'bg-orange-500/10 text-orange-400' : 'bg-red-500/10 text-red-400'}`}>
+                      <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded inline-block border ${device.status === 'online' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : device.status === 'unauthorized' ? 'bg-orange-50 text-orange-700 border-orange-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
                         {device.status}
                       </span>
                       {device.provider && (
-                        <span className="text-[10px] uppercase font-bold px-2 py-1 rounded-md inline-block bg-gray-800 text-gray-400">
+                        <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded inline-block bg-gray-100 text-gray-600 border border-gray-200">
                           {device.provider}
                         </span>
                       )}
@@ -146,7 +146,7 @@ function Devices() {
                 
                 <button 
                   onClick={() => toggleMutation.mutate(device)}
-                  className={`p-2 rounded-full transition-colors ${device.is_active ? 'bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20' : 'bg-gray-800 text-gray-500 hover:bg-gray-700'}`}
+                  className={`p-2 rounded-full transition-colors ${device.is_active ? 'bg-blue-50 text-blue-600 hover:bg-blue-100' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
                   title={device.is_active ? "Tắt thiết bị" : "Bật thiết bị"}
                 >
                   <Power className="w-5 h-5" />
@@ -156,34 +156,34 @@ function Devices() {
               <div className="space-y-2 mt-6">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">IP / URL:</span>
-                  <span className="text-gray-300 font-mono text-xs truncate max-w-[150px]">{device.base_url}</span>
+                  <span className="text-gray-700 font-mono text-xs truncate max-w-[150px]">{device.base_url}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Đã gửi hôm nay:</span>
-                  <span className="text-gray-300 font-mono text-xs">
-                    <span className="text-indigo-400 font-bold">{device.sent_today || 0}</span> 
+                  <span className="text-gray-700 font-mono text-xs">
+                    <span className="text-blue-600 font-bold">{device.sent_today || 0}</span> 
                     {device.daily_limit > 0 ? ` / ${device.daily_limit}` : ' (Không giới hạn)'}
                   </span>
                 </div>
                 {isAdmin && (
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Chủ sở hữu:</span>
-                    <span className="text-gray-300 text-xs">{device.user_id ? device.user_id.slice(0,8) + '...' : 'Hệ thống'}</span>
+                    <span className="text-gray-700 text-xs">{device.user_id ? device.user_id.slice(0,8) + '...' : 'Hệ thống'}</span>
                   </div>
                 )}
                 {device.last_health_check_at && (
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Cập nhật cuối:</span>
-                    <span className="text-gray-300 text-xs">{format(new Date(device.last_health_check_at + 'Z'), 'HH:mm:ss dd/MM')}</span>
+                    <span className="text-gray-700 text-xs">{format(new Date(device.last_health_check_at + 'Z'), 'HH:mm:ss dd/MM')}</span>
                   </div>
                 )}
               </div>
 
-              <div className="mt-6 pt-4 border-t border-white/5 flex justify-end">
+              <div className="mt-6 pt-4 border-t border-gray-100 flex justify-end">
                 <div className="flex items-center gap-3">
                   <button 
                     onClick={() => openEditModal(device)}
-                    className="text-xs flex items-center text-gray-400 hover:text-indigo-400 transition"
+                    className="text-xs flex items-center text-gray-500 hover:text-blue-600 transition"
                   >
                     <Edit2 className="w-3 h-3 mr-1" /> Chỉnh sửa
                   </button>
@@ -194,7 +194,7 @@ function Devices() {
                           deleteMutation.mutate(device.id);
                         }
                       }}
-                      className="text-xs flex items-center text-red-400 hover:text-red-300 transition"
+                      className="text-xs flex items-center text-red-500 hover:text-red-700 transition"
                     >
                       <Trash2 className="w-3 h-3 mr-1" /> Xóa
                     </button>
@@ -207,34 +207,34 @@ function Devices() {
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-[#121214] border border-white/10 rounded-3xl p-8 w-full max-w-md shadow-2xl">
-            <h2 className="text-xl font-bold mb-6 text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm">
+          <div className="card p-8 w-full max-w-md shadow-2xl">
+            <h2 className="text-xl font-bold mb-6 text-gray-900">
               {editingDevice ? 'Sửa Thiết bị' : 'Thêm Thiết bị mới'}
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Tên thiết bị</label>
+                <label className="label-text">Tên thiết bị</label>
                 <input 
                   type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})}
-                  className="w-full bg-black/50 border border-gray-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500"
+                  className="input-field"
                   placeholder="VD: Samsung A50 - Viettel" required
                 />
               </div>
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Base URL</label>
+                <label className="label-text">Base URL</label>
                 <input 
                   type="url" value={formData.base_url} onChange={e => setFormData({...formData, base_url: e.target.value})}
-                  className="w-full bg-black/50 border border-gray-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500"
+                  className="input-field"
                   placeholder="VD: http://100.120.152.19:8082/" required
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">Nhà mạng (Tùy chọn)</label>
+                  <label className="label-text">Nhà mạng (Tùy chọn)</label>
                   <select 
                     value={formData.provider} onChange={e => setFormData({...formData, provider: e.target.value})}
-                    className="w-full bg-black/50 border border-gray-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500"
+                    className="input-field"
                   >
                     <option value="">-- Chọn --</option>
                     <option value="Viettel">Viettel</option>
@@ -244,19 +244,19 @@ function Devices() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">Giới hạn ngày</label>
+                  <label className="label-text">Giới hạn ngày</label>
                   <input 
                     type="number" value={formData.daily_limit} onChange={e => setFormData({...formData, daily_limit: parseInt(e.target.value) || 0})}
-                    className="w-full bg-black/50 border border-gray-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500"
+                    className="input-field"
                     placeholder="0 = Không giới hạn" min="0"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-sm text-gray-400 mb-1">API Key (Chỉ đổi khi cần)</label>
+                <label className="label-text">API Key (Chỉ đổi khi cần)</label>
                 <input 
                   type="password" value={formData.api_key} onChange={e => setFormData({...formData, api_key: e.target.value})}
-                  className="w-full bg-black/50 border border-gray-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 placeholder-gray-600"
+                  className="input-field"
                   placeholder={editingDevice ? "******** (Nhập để đổi)" : "Để trống nếu không dùng"}
                 />
               </div>
@@ -264,14 +264,14 @@ function Devices() {
                 <input 
                   type="checkbox" id="is_default" 
                   checked={formData.is_default} onChange={e => setFormData({...formData, is_default: e.target.checked})}
-                  className="w-4 h-4 text-indigo-600 bg-gray-800 border-gray-700 rounded focus:ring-indigo-500"
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
-                <label htmlFor="is_default" className="text-sm text-gray-300">Đặt làm thiết bị gửi SMS mặc định</label>
+                <label htmlFor="is_default" className="text-sm text-gray-700">Đặt làm thiết bị gửi SMS mặc định</label>
               </div>
               
               <div className="flex justify-end space-x-3 mt-8">
-                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-gray-400 hover:text-white transition">Hủy</button>
-                <button type="submit" className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-xl font-semibold transition" disabled={saveMutation.isLoading}>
+                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-lg transition">Hủy</button>
+                <button type="submit" className="btn-primary" disabled={saveMutation.isLoading}>
                   {saveMutation.isLoading ? 'Đang lưu...' : 'Lưu Thiết bị'}
                 </button>
               </div>

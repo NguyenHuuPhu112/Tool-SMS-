@@ -83,9 +83,6 @@ def check_rate_limit_phone(phone_number: str, db: Session) -> tuple[bool, str]:
     Kiem tra rate limit cho 1 so dien thoai.
     Returns: (is_allowed, error_message)
     """
-    # COMMENTED OUT FOR TESTING: Luôn cho phép gửi tin nhắn không giới hạn đến 1 số điện thoại khi test
-    return True, ""
-    
     limit = _get_phone_limit(db)
     now = time.time()
 

@@ -43,6 +43,42 @@ class UserUpdate(BaseModel):
     daily_quota: Optional[int] = None
     allow_shared_devices: Optional[bool] = None
 
+class RegisterRequest(BaseModel):
+    username: str
+    email: str
+    password: str
+
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, v: str) -> str:
+        return v.strip()
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: str) -> str:
+        cleaned = v.strip().lower()
+        # Basic regex validation
+        if not re.match(r"[^@]+@[^@]+\.[^@]+", cleaned):
+            raise ValueError("Email không hợp lệ")
+        return cleaned
+
+class VerifyEmailOtpRequest(BaseModel):
+    email: str
+    otp: str
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: str) -> str:
+        return v.strip().lower()
+
+class ResendEmailOtpRequest(BaseModel):
+    email: str
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: str) -> str:
+        return v.strip().lower()
+
 
 # ─────────────────────────────────────────────────────────────
 # SMS Gateway Schemas
@@ -109,6 +145,9 @@ class GatewayLogResponse(BaseModel):
     device_id: Optional[str] = None
     gateway_url: Optional[str] = None
     gateway_response: Optional[str] = None
+    detected_provider: Optional[str] = None
+    requested_provider: Optional[str] = None
+    routing_strategy: Optional[str] = None
     error_message: Optional[str] = None
     retry_count: int
     max_retries: int

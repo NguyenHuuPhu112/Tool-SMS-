@@ -8,3 +8,4 @@ requests
 pyjwt
 bcrypt
 httpx
+openpyxl

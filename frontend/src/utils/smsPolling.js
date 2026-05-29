@@ -16,7 +16,7 @@
  */
 
 import axios from 'axios';
-import { TERMINAL_STATUSES } from './constants';
+import { TERMINAL_STATUSES } from './smsStatus';
 
 const API_BASE = '/api/gateway';
 
@@ -33,14 +33,15 @@ const API_BASE = '/api/gateway';
  */
 export async function pollSmsStatus(logId, options = {}) {
   const {
-    maxAttempts = 10,
-    interval = 2000,
+    maxAttempts = 30, // Increased default
+    initialInterval = 2000,
     onStatusChange = null,
     signal = null,
   } = options;
 
   let lastStatus = 'accepted';
   let lastLog = null;
+  let currentInterval = initialInterval;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     // Check if polling was cancelled
@@ -51,7 +52,7 @@ export async function pollSmsStatus(logId, options = {}) {
 
     // Wait before polling
     await new Promise((resolve, reject) => {
-      const timeout = setTimeout(resolve, interval);
+      const timeout = setTimeout(resolve, currentInterval);
       if (signal) {
         signal.addEventListener('abort', () => {
           clearTimeout(timeout);
@@ -90,6 +91,14 @@ export async function pollSmsStatus(logId, options = {}) {
           timedOut: false,
         };
       }
+
+      // Adjust interval based on current status
+      if (log.status === 'gateway_accepted' || log.status === 'sent') {
+        currentInterval = 5000; // Poll slower when waiting for delivery callbacks
+      } else {
+        currentInterval = initialInterval; // Poll fast for pending/sending
+      }
+
     } catch (err) {
       console.error(`[SMS Poll] Error polling log ${logId} (attempt ${attempt}):`, err.message);
       // Continue polling on error — the log might not be ready yet

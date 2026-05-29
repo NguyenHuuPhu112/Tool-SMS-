@@ -172,12 +172,12 @@ function processNumbers(rawNumbers) {
     const cleaned = cleanPhoneNumber(rawStr);
     
     if (isValidPhone(cleaned)) {
-      // COMMENTED OUT FOR TESTING: Cho phép nhập số trùng lặp khi test
-      // if (!validSet.has(cleaned)) {
-      //   validSet.add(cleaned);
+      // Khôi phục lọc trùng lặp số điện thoại
+      if (!validSet.has(cleaned)) {
+        validSet.add(cleaned);
         const network = getNetworkOperator(cleaned);
         valid.push({ phone: cleaned, network });
-      // }
+      }
     } else {
       invalid.push(rawStr);
     }

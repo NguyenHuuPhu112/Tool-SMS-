@@ -9,23 +9,23 @@ function Layout() {
   const { user } = useContext(AuthContext);
 
   return (
-    <div className="flex flex-col lg:flex-row min-h-screen bg-[#09090b] text-gray-100 font-sans selection:bg-indigo-500 selection:text-white">
+    <div className="flex flex-col lg:flex-row min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-blue-500 selection:text-white">
       {/* Mobile Top Navbar */}
-      <header className="lg:hidden flex items-center justify-between px-4 h-16 bg-[#09090b]/85 backdrop-blur-md border-b border-white/5 sticky top-0 z-40">
+      <header className="lg:hidden flex items-center justify-between px-4 h-16 bg-white border-b border-gray-200 sticky top-0 z-40">
         <div className="flex items-center gap-3">
           <button 
             onClick={() => setIsMobileMenuOpen(true)}
-            className="p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl border border-white/10 transition-colors"
+            className="p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg border border-transparent transition-colors"
             aria-label="Mở menu"
           >
             <Menu className="w-5 h-5" />
           </button>
-          <span className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">
+          <span className="text-lg font-bold text-gray-900">
             TOOL SMS
           </span>
         </div>
         <div className="flex items-center">
-          <span className="text-xs text-gray-400 font-medium px-3 py-1 bg-white/5 rounded-full border border-white/5 capitalize">
+          <span className="text-xs text-gray-600 font-medium px-3 py-1 bg-gray-100 rounded-full border border-gray-200 capitalize">
             {user?.username} ({user?.role})
           </span>
         </div>
@@ -34,7 +34,7 @@ function Layout() {
       {/* Backdrop overlay for mobile drawer */}
       {isMobileMenuOpen && (
         <div 
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden transition-opacity duration-300"
+          className="fixed inset-0 z-40 bg-gray-900/50 backdrop-blur-sm lg:hidden transition-opacity duration-300"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}

@@ -49,15 +49,36 @@ class User(Base):
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     username = Column(String, unique=True, index=True)
     password_hash = Column(String)
+    email = Column(String, unique=True, index=True, nullable=True)
+    is_email_verified = Column(Boolean, default=False)
+    is_active = Column(Boolean, default=True)
     role = Column(String, default="user")  # "admin" or "user"
     monthly_quota = Column(Integer, default=1000)
     daily_quota = Column(Integer, default=100)
     allow_shared_devices = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     campaigns = relationship("Campaign", back_populates="user")
     logs = relationship("SMSLog", back_populates="user")
     gateway_devices = relationship("GatewayDevice", back_populates="user")
+
+
+class EmailOTP(Base):
+    __tablename__ = "email_otps"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String, ForeignKey("users.id"), nullable=True)
+    email = Column(String, nullable=False, index=True)
+    otp_hash = Column(String, nullable=False)
+    purpose = Column(String, nullable=False, default="register")
+    expires_at = Column(DateTime, nullable=False)
+    consumed_at = Column(DateTime, nullable=True)
+    attempts = Column(Integer, default=0)
+    max_attempts = Column(Integer, default=5)
+    ip_address = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
 class Campaign(Base):

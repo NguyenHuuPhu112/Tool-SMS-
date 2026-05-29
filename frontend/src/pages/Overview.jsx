@@ -33,9 +33,9 @@ function Overview() {
 
   if (isLoading && !stats) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-indigo-400">
-        <div className="w-12 h-12 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin mb-4"></div>
-        <p className="animate-pulse font-medium">Đang đồng bộ dữ liệu Real-time...</p>
+      <div className="flex flex-col items-center justify-center h-full text-blue-600">
+        <div className="w-12 h-12 border-4 border-blue-500/30 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+        <p className="animate-pulse font-medium text-gray-600">Đang đồng bộ dữ liệu Real-time...</p>
       </div>
     );
   }
@@ -54,10 +54,10 @@ function Overview() {
     <div className="space-y-8 animate-fade-in-down">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">
+          <h1 className="text-2xl font-bold text-gray-900">
             Tổng quan Hệ thống
           </h1>
-          <p className="text-gray-400 mt-1 flex items-center">
+          <p className="text-gray-500 mt-1 flex items-center text-sm">
             <span className="relative flex h-2 w-2 mr-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
@@ -69,53 +69,49 @@ function Overview() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-gradient-to-b from-[#18181b] to-[#121214] border border-white/5 p-6 rounded-3xl shadow-[0_8px_30px_rgba(0,0,0,0.5)] relative overflow-hidden group hover:border-blue-500/30 transition-all duration-300">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl -mr-10 -mt-10 group-hover:bg-blue-500/20 transition-all"></div>
+        <div className="card p-6 relative overflow-hidden group hover:border-blue-300 transition-all duration-300">
           <div className="flex justify-between items-start mb-4">
             <div>
-              <p className="text-gray-400 text-sm font-medium">Tổng SMS đã gửi</p>
-              <h3 className="text-4xl font-black text-white mt-2 tracking-tight">{kpis.total_sent.toLocaleString()}</h3>
+              <p className="text-gray-500 text-sm font-medium">Tổng SMS đã gửi</p>
+              <h3 className="text-3xl font-bold text-gray-900 mt-2">{kpis.total_sent.toLocaleString()}</h3>
             </div>
-            <div className="p-3 bg-blue-500/10 rounded-2xl text-blue-400">
+            <div className="p-3 bg-blue-50 rounded-xl text-blue-600">
               <Activity className="w-6 h-6" />
             </div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-b from-[#18181b] to-[#121214] border border-white/5 p-6 rounded-3xl shadow-[0_8px_30px_rgba(0,0,0,0.5)] relative overflow-hidden group hover:border-emerald-500/30 transition-all duration-300">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl -mr-10 -mt-10 group-hover:bg-emerald-500/20 transition-all"></div>
+        <div className="card p-6 relative overflow-hidden group hover:border-emerald-300 transition-all duration-300">
           <div className="flex justify-between items-start mb-4">
             <div>
-              <p className="text-gray-400 text-sm font-medium">Đã gửi hôm nay</p>
-              <h3 className="text-4xl font-black text-emerald-400 mt-2 tracking-tight">{kpis.today_sent.toLocaleString()}</h3>
+              <p className="text-gray-500 text-sm font-medium">Đã gửi hôm nay</p>
+              <h3 className="text-3xl font-bold text-emerald-600 mt-2">{kpis.today_sent.toLocaleString()}</h3>
             </div>
-            <div className="p-3 bg-emerald-500/10 rounded-2xl text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+            <div className="p-3 bg-emerald-50 rounded-xl text-emerald-600">
               <Send className="w-6 h-6" />
             </div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-b from-[#18181b] to-[#121214] border border-white/5 p-6 rounded-3xl shadow-[0_8px_30px_rgba(0,0,0,0.5)] relative overflow-hidden group hover:border-yellow-500/30 transition-all duration-300">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/10 rounded-full blur-3xl -mr-10 -mt-10 group-hover:bg-yellow-500/20 transition-all"></div>
+        <div className="card p-6 relative overflow-hidden group hover:border-yellow-300 transition-all duration-300">
           <div className="flex justify-between items-start mb-4">
             <div>
-              <p className="text-gray-400 text-sm font-medium">Đang chờ xử lý</p>
-              <h3 className="text-4xl font-black text-yellow-400 mt-2 tracking-tight">{kpis.pending.toLocaleString()}</h3>
+              <p className="text-gray-500 text-sm font-medium">Đang chờ xử lý</p>
+              <h3 className="text-3xl font-bold text-yellow-600 mt-2">{kpis.pending.toLocaleString()}</h3>
             </div>
-            <div className="p-3 bg-yellow-500/10 rounded-2xl text-yellow-400">
+            <div className="p-3 bg-yellow-50 rounded-xl text-yellow-600">
               <Clock className="w-6 h-6" />
             </div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-b from-[#18181b] to-[#121214] border border-white/5 p-6 rounded-3xl shadow-[0_8px_30px_rgba(0,0,0,0.5)] relative overflow-hidden group hover:border-red-500/30 transition-all duration-300">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full blur-3xl -mr-10 -mt-10 group-hover:bg-red-500/20 transition-all"></div>
+        <div className="card p-6 relative overflow-hidden group hover:border-red-300 transition-all duration-300">
           <div className="flex justify-between items-start mb-4">
             <div>
-              <p className="text-gray-400 text-sm font-medium">Lỗi hôm nay</p>
-              <h3 className="text-4xl font-black text-red-400 mt-2 tracking-tight">{kpis.failed_today.toLocaleString()}</h3>
+              <p className="text-gray-500 text-sm font-medium">Lỗi hôm nay</p>
+              <h3 className="text-3xl font-bold text-red-600 mt-2">{kpis.failed_today.toLocaleString()}</h3>
             </div>
-            <div className="p-3 bg-red-500/10 rounded-2xl text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.2)]">
+            <div className="p-3 bg-red-50 rounded-xl text-red-600">
               <AlertTriangle className="w-6 h-6" />
             </div>
           </div>
@@ -126,11 +122,10 @@ function Overview() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Main Area Chart */}
-        <div className="lg:col-span-2 bg-gradient-to-b from-[#18181b] to-[#121214] border border-white/5 p-6 rounded-3xl shadow-xl relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
+        <div className="lg:col-span-2 card p-6">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-lg font-bold text-white flex items-center">
-              <TrendingUp className="w-5 h-5 mr-2 text-indigo-400" /> Lưu lượng SMS (24H)
+            <h2 className="text-lg font-bold text-gray-900 flex items-center">
+              <TrendingUp className="w-5 h-5 mr-2 text-blue-500" /> Lưu lượng SMS (24H)
             </h2>
           </div>
           <div className="h-[350px] w-full">
@@ -146,11 +141,11 @@ function Overview() {
                     <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <XAxis dataKey="name" stroke="#52525b" tick={{fill: '#a1a1aa', fontSize: 12}} axisLine={false} tickLine={false} />
-                <YAxis stroke="#52525b" tick={{fill: '#a1a1aa', fontSize: 12}} axisLine={false} tickLine={false} />
-                <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
+                <XAxis dataKey="name" stroke="#9ca3af" tick={{fill: '#6b7280', fontSize: 12}} axisLine={false} tickLine={false} />
+                <YAxis stroke="#9ca3af" tick={{fill: '#6b7280', fontSize: 12}} axisLine={false} tickLine={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#18181b', borderColor: '#3f3f46', borderRadius: '12px', color: '#fff', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)' }}
+                  contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e5e7eb', borderRadius: '8px', color: '#111827', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
                   itemStyle={{ fontWeight: 500 }}
                 />
                 <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
@@ -162,8 +157,8 @@ function Overview() {
         </div>
 
         {/* Donut Chart */}
-        <div className="bg-gradient-to-b from-[#18181b] to-[#121214] border border-white/5 p-6 rounded-3xl shadow-xl flex flex-col">
-          <h2 className="text-lg font-bold text-white mb-2">Tỉ lệ trạng thái</h2>
+        <div className="card p-6 flex flex-col">
+          <h2 className="text-lg font-bold text-gray-900 mb-1">Tỉ lệ trạng thái</h2>
           <p className="text-xs text-gray-500 mb-6">Phân bổ tin nhắn trong ngày hôm nay</p>
           
           <div className="flex-grow flex items-center justify-center relative">
@@ -184,7 +179,7 @@ function Overview() {
                   ))}
                 </Pie>
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#18181b', borderColor: '#3f3f46', borderRadius: '12px', color: '#fff' }}
+                  contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e5e7eb', borderRadius: '8px', color: '#111827' }}
                   itemStyle={{ fontWeight: 500 }}
                 />
               </PieChart>
@@ -192,10 +187,10 @@ function Overview() {
             
             {/* Center Label */}
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-3xl font-black text-white">
+              <span className="text-3xl font-bold text-gray-900">
                 {(kpis.today_sent + kpis.failed_today + kpis.pending).toLocaleString()}
               </span>
-              <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">Tổng cộng</span>
+              <span className="text-xs text-gray-500 font-medium uppercase tracking-wider mt-1">Tổng cộng</span>
             </div>
           </div>
 
@@ -204,9 +199,9 @@ function Overview() {
               <div key={index} className="flex justify-between items-center">
                 <div className="flex items-center">
                   <div className="w-3 h-3 rounded-full mr-3" style={{ backgroundColor: COLORS[index] }}></div>
-                  <span className="text-sm text-gray-300 font-medium">{entry.name}</span>
+                  <span className="text-sm text-gray-700 font-medium">{entry.name}</span>
                 </div>
-                <span className="text-sm font-bold text-white">{entry.value.toLocaleString()}</span>
+                <span className="text-sm font-bold text-gray-900">{entry.value.toLocaleString()}</span>
               </div>
             ))}
           </div>
@@ -218,22 +213,21 @@ function Overview() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in-up">
           
           {/* User Bar Chart */}
-          <div className="lg:col-span-2 bg-gradient-to-b from-[#18181b] to-[#121214] border border-white/5 p-6 rounded-3xl shadow-xl relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-cyan-500"></div>
+          <div className="lg:col-span-2 card p-6">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-lg font-bold text-white flex items-center">
-                <Users className="w-5 h-5 mr-2 text-blue-400" /> Top Users Gửi SMS
+              <h2 className="text-lg font-bold text-gray-900 flex items-center">
+                <Users className="w-5 h-5 mr-2 text-blue-500" /> Top Users Gửi SMS
               </h2>
             </div>
             <div className="h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={userStats} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#27272a" horizontal={false} />
-                  <XAxis type="number" stroke="#52525b" tick={{fill: '#a1a1aa'}} />
-                  <YAxis dataKey="name" type="category" stroke="#52525b" tick={{fill: '#a1a1aa', fontWeight: 500}} width={80} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" horizontal={false} />
+                  <XAxis type="number" stroke="#9ca3af" tick={{fill: '#6b7280'}} />
+                  <YAxis dataKey="name" type="category" stroke="#9ca3af" tick={{fill: '#4b5563', fontWeight: 500}} width={80} />
                   <Tooltip 
-                    cursor={{fill: '#27272a', opacity: 0.4}}
-                    contentStyle={{ backgroundColor: '#18181b', borderColor: '#3f3f46', borderRadius: '12px', color: '#fff' }}
+                    cursor={{fill: '#f3f4f6', opacity: 0.4}}
+                    contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e5e7eb', borderRadius: '8px', color: '#111827' }}
                   />
                   <Bar dataKey="value" name="Số tin nhắn" radius={[0, 4, 4, 0]}>
                     {userStats.map((entry, index) => (
@@ -246,8 +240,8 @@ function Overview() {
           </div>
 
           {/* User Pie Chart */}
-          <div className="bg-gradient-to-b from-[#18181b] to-[#121214] border border-white/5 p-6 rounded-3xl shadow-xl flex flex-col">
-            <h2 className="text-lg font-bold text-white mb-2">Phân bổ theo User</h2>
+          <div className="card p-6 flex flex-col">
+            <h2 className="text-lg font-bold text-gray-900 mb-1">Phân bổ theo User</h2>
             <p className="text-xs text-gray-500 mb-6">Tỷ trọng tin nhắn gửi thành công</p>
             
             <div className="flex-grow flex items-center justify-center">
@@ -268,7 +262,7 @@ function Overview() {
                     ))}
                   </Pie>
                   <Tooltip 
-                    contentStyle={{ backgroundColor: '#18181b', borderColor: '#3f3f46', borderRadius: '12px', color: '#fff' }}
+                    contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e5e7eb', borderRadius: '8px', color: '#111827' }}
                   />
                 </PieChart>
               </ResponsiveContainer>
